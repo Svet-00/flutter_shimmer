@@ -11,6 +11,7 @@ class MyApp extends StatelessWidget {
       routes: <String, WidgetBuilder>{
         'loading': (_) => LoadingListPage(),
         'slide': (_) => SlideToUnlockPage(),
+        'synced': (_) => TwoSynchronizedShimmers(),
       },
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -41,6 +42,10 @@ class _MyHomePageState extends State<MyHomePage> {
           ListTile(
             title: const Text('Slide To Unlock'),
             onTap: () => Navigator.of(context).pushNamed('slide'),
+          ),
+          ListTile(
+            title: const Text('Two Synchronized Shimmers'),
+            onTap: () => Navigator.of(context).pushNamed('synced'),
           )
         ],
       ),
@@ -74,57 +79,14 @@ class _LoadingListPageState extends State<LoadingListPage> {
                 highlightColor: Colors.grey[100],
                 enabled: _enabled,
                 child: ListView.builder(
-                  itemBuilder: (_, __) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Container(
-                          width: 48.0,
-                          height: 48.0,
-                          color: Colors.white,
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8.0),
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Container(
-                                width: double.infinity,
-                                height: 8.0,
-                                color: Colors.white,
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 2.0),
-                              ),
-                              Container(
-                                width: double.infinity,
-                                height: 8.0,
-                                color: Colors.white,
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 2.0),
-                              ),
-                              Container(
-                                width: 40.0,
-                                height: 8.0,
-                                color: Colors.white,
-                              ),
-                            ],
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
+                  itemBuilder: (_, __) => const ListItem(),
                   itemCount: 6,
                 ),
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: FlatButton(
+              child: TextButton(
                   onPressed: () {
                     setState(() {
                       _enabled = !_enabled;
@@ -132,9 +94,10 @@ class _LoadingListPageState extends State<LoadingListPage> {
                   },
                   child: Text(
                     _enabled ? 'Stop' : 'Play',
-                    style: Theme.of(context).textTheme.button.copyWith(
-                        fontSize: 18.0,
-                        color: _enabled ? Colors.redAccent : Colors.green),
+                    style: Theme.of(context)
+                        .textTheme
+                        .button
+                        .copyWith(fontSize: 18.0, color: _enabled ? Colors.redAccent : Colors.green),
                   )),
             )
           ],
@@ -144,16 +107,60 @@ class _LoadingListPageState extends State<LoadingListPage> {
   }
 }
 
+class ListItem extends StatelessWidget {
+  const ListItem({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Container(
+            width: 48.0,
+            height: 48.0,
+            color: Colors.white,
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8.0),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  width: double.infinity,
+                  height: 8.0,
+                  color: Colors.white,
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 2.0),
+                ),
+                Container(
+                  width: double.infinity,
+                  height: 8.0,
+                  color: Colors.white,
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 2.0),
+                ),
+                Container(
+                  width: 40.0,
+                  height: 8.0,
+                  color: Colors.white,
+                ),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
+
 class SlideToUnlockPage extends StatelessWidget {
-  final List<String> days = <String>[
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday'
-  ];
+  final List<String> days = <String>['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   final List<String> months = <String>[
     'January',
     'February',
@@ -246,6 +253,74 @@ class SlideToUnlockPage extends StatelessWidget {
                 ),
               ))
         ],
+      ),
+    );
+  }
+}
+
+class TwoSynchronizedShimmers extends StatefulWidget {
+  const TwoSynchronizedShimmers({Key key}) : super(key: key);
+
+  @override
+  _TwoSynchronizedShimmersState createState() => _TwoSynchronizedShimmersState();
+}
+
+class _TwoSynchronizedShimmersState extends State<TwoSynchronizedShimmers> {
+  bool _enabled = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Two Synchronized Shimmers'),
+      ),
+      body: Container(
+        color: Colors.black,
+        child: ShimmerController(
+          enabled: _enabled,
+          child: ListView(
+            children: <Widget>[
+              const SizedBox(height: 32),
+              Shimmer.fromColors(
+                child: ListView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemBuilder: (_, __) => const ListItem(),
+                  itemCount: 5,
+                ),
+                baseColor: Colors.yellow[400],
+                highlightColor: Colors.yellow[100],
+              ),
+              Shimmer.fromColors(
+                child: ListView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemBuilder: (_, __) => const ListItem(),
+                  itemCount: 5,
+                ),
+                baseColor: Colors.orange[400],
+                highlightColor: Colors.orange[100],
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _enabled = !_enabled;
+                    });
+                  },
+                  child: Text(
+                    _enabled ? 'Stop' : 'Play',
+                    style: Theme.of(context)
+                        .textTheme
+                        .button
+                        .copyWith(fontSize: 18.0, color: _enabled ? Colors.redAccent : Colors.green),
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
       ),
     );
   }

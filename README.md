@@ -1,8 +1,19 @@
 # Shimmer
 
-[![pub package](https://img.shields.io/pub/v/shimmer.svg)](https://pub.dartlang.org/packages/shimmer) ![](https://github.com/hnvn/flutter_shimmer/workflows/unit%20test/badge.svg)
+Forked from [hnvn/flutter_shimmer](https://github.com/hnvn/flutter_shimmer).
 
-A package provides an easy way to add shimmer effect in Flutter project
+A package provides an easy way to add shimmer effect in Flutter project.
+
+Note: When using multiple synchronized shimmers, glares will start in the same position.
+This is possible to end up with the following shape (where slash is a glare):
+```
+--/
+-/
+/
+--/
+-/
+/
+```
 
 <p>
     <img src="https://github.com/hnvn/flutter_shimmer/blob/master/screenshots/loading_list.gif?raw=true"/>

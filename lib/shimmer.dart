@@ -7,6 +7,8 @@
 
 library shimmer;
 
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
@@ -56,22 +58,22 @@ enum ShimmerDirection { ltr, rtl, ttb, btt }
 /// * use one [Shimmer] to wrap list of [Widget]s instead of a list of many [Shimmer]s
 ///
 @immutable
-class Shimmer extends StatefulWidget {
+class Shimmer extends StatelessWidget {
   final Widget child;
-  final Duration period;
+  final Duration? period;
   final ShimmerDirection direction;
   final Gradient gradient;
-  final int loop;
-  final bool enabled;
+  final int? loop;
+  final bool? enabled;
 
   const Shimmer({
     Key? key,
     required this.child,
     required this.gradient,
     this.direction = ShimmerDirection.ltr,
-    this.period = const Duration(milliseconds: 1500),
-    this.loop = 0,
-    this.enabled = true,
+    this.period,
+    this.loop,
+    this.enabled,
   }) : super(key: key);
 
   ///
@@ -84,98 +86,77 @@ class Shimmer extends StatefulWidget {
     required this.child,
     required Color baseColor,
     required Color highlightColor,
-    this.period = const Duration(milliseconds: 1500),
+    this.period,
     this.direction = ShimmerDirection.ltr,
-    this.loop = 0,
-    this.enabled = true,
+    this.loop,
+    this.enabled,
   })  : gradient = LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.centerRight,
-            colors: <Color>[
-              baseColor,
-              baseColor,
-              highlightColor,
-              baseColor,
-              baseColor
-            ],
-            stops: const <double>[
-              0.0,
-              0.35,
-              0.5,
-              0.65,
-              1.0
-            ]),
+            colors: <Color>[baseColor, baseColor, highlightColor, baseColor, baseColor],
+            stops: const <double>[0.0, 0.35, 0.5, 0.65, 1.0]),
         super(key: key);
-
-  @override
-  _ShimmerState createState() => _ShimmerState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<Gradient>('gradient', gradient,
-        defaultValue: null));
+    properties.add(DiagnosticsProperty<Gradient>('gradient', gradient, defaultValue: null));
     properties.add(EnumProperty<ShimmerDirection>('direction', direction));
-    properties.add(
-        DiagnosticsProperty<Duration>('period', period, defaultValue: null));
-    properties
-        .add(DiagnosticsProperty<bool>('enabled', enabled, defaultValue: null));
+    properties.add(DiagnosticsProperty<Duration>('period', period, defaultValue: null));
+    properties.add(DiagnosticsProperty<bool>('enabled', enabled, defaultValue: null));
     properties.add(DiagnosticsProperty<int>('loop', loop, defaultValue: 0));
   }
-}
 
-class _ShimmerState extends State<Shimmer> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  int _count = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: widget.period)
-      ..addStatusListener((AnimationStatus status) {
-        if (status != AnimationStatus.completed) {
-          return;
-        }
-        _count++;
-        if (widget.loop <= 0) {
-          _controller.repeat();
-        } else if (_count < widget.loop) {
-          _controller.forward(from: 0.0);
-        }
-      });
-    if (widget.enabled) {
-      _controller.forward();
-    }
+  bool synced(BuildContext context) {
+    return ShimmerController.maybeOf(context) != null;
   }
 
-  @override
-  void didUpdateWidget(Shimmer oldWidget) {
-    if (widget.enabled) {
-      _controller.forward();
-    } else {
-      _controller.stop();
-    }
-    super.didUpdateWidget(oldWidget);
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildShimmer(BuildContext context, AnimationController controller) {
     return AnimatedBuilder(
-      animation: _controller,
-      child: widget.child,
+      animation: controller,
+      child: child,
       builder: (BuildContext context, Widget? child) => _Shimmer(
         child: child,
-        direction: widget.direction,
-        gradient: widget.gradient,
-        percent: _controller.value,
+        direction: direction,
+        gradient: gradient,
+        percent: controller.value,
       ),
     );
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    if (synced(context)) {
+      assert(() {
+        if (enabled != null || loop != null || period != null) {
+          log(
+            '[Shimmer] WARNING This Shimmer is controlled by external ShimmerController'
+            ' so [enabled], [loop] and [period] parameters are ignored.',
+            stackTrace: StackTrace.current,
+          );
+        }
+        return true;
+      }());
+
+      return _buildShimmer(
+        context,
+        ShimmerController.of(context)._controller,
+      );
+    } else {
+      return ShimmerController(
+        enabled: enabled ?? true,
+        loop: loop ?? 0,
+        period: period ?? const Duration(milliseconds: 1500),
+        child: Builder(
+          builder: (BuildContext context) {
+            return _buildShimmer(
+              context,
+              ShimmerController.of(context)._controller,
+            );
+          },
+        ),
+      );
+    }
   }
 }
 
@@ -282,4 +263,88 @@ class _ShimmerFilter extends RenderProxyBox {
   double _offset(double start, double end, double percent) {
     return start + (end - start) * percent;
   }
+}
+
+class ShimmerController extends StatefulWidget {
+  final Widget child;
+  final Duration period;
+  final int loop;
+  final bool enabled;
+
+  const ShimmerController({
+    Key? key,
+    required this.child,
+    this.period = const Duration(milliseconds: 1500),
+    this.loop = 0,
+    this.enabled = true,
+  }) : super(key: key);
+
+  static _ShimmerControllerState? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<_ShimmerControllerScope>()?._state;
+  }
+
+  static _ShimmerControllerState of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<_ShimmerControllerScope>()!._state;
+  }
+
+  @override
+  _ShimmerControllerState createState() => _ShimmerControllerState();
+}
+
+class _ShimmerControllerState extends State<ShimmerController> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  int _count = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.period)
+      ..addStatusListener((AnimationStatus status) {
+        if (status != AnimationStatus.completed) {
+          return;
+        }
+        _count++;
+        if (widget.loop <= 0) {
+          _controller.repeat();
+        } else if (_count < widget.loop) {
+          _controller.forward(from: 0.0);
+        }
+      });
+    if (widget.enabled) {
+      _controller.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(ShimmerController oldWidget) {
+    if (widget.enabled) {
+      _controller.forward();
+    } else {
+      _controller.stop();
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _ShimmerControllerScope(this, child: widget.child);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+}
+
+class _ShimmerControllerScope extends InheritedWidget {
+  const _ShimmerControllerScope(
+    this._state, {
+    Key? key,
+    required Widget child,
+  }) : super(key: key, child: child);
+  final _ShimmerControllerState _state;
+
+  @override
+  bool updateShouldNotify(_ShimmerControllerScope oldWidget) => _state != oldWidget._state;
 }

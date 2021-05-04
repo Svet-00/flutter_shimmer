@@ -1,3 +1,6 @@
+## [2.1.0] - 2021-05-04
+
+* add `ShimmerController` to be able to have multiple synchronized shimmers
 
 ## [2.0.0] - 2021-04-12
 
